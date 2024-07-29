@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Get all CRDs
+crds=$(kubectl get crd -o name)
+
+# Loop through each CRD
+for crd in $crds
+do
+    echo "Processing $crd"
+    
+    # Extract just the CRD name
+    crd_name=$(echo $crd | cut -d/ -f2)
+    
+    # Delete all resources of this CRD type
+    echo "Deleting resources for $crd_name"
+    kubectl get $crd_name --all-namespaces -o name | xargs -I {} kubectl delete {} --wait=false
+    
+    # Delete the CRD itself
+    echo "Deleting CRD $crd_name"
+    kubectl delete crd $crd_name --wait=false
+done
+
+echo "Waiting for deletions to complete..."
+kubectl get crd --watch-only
